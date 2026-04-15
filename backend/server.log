@@ -1,0 +1,11 @@
+✅ Pinata IPFS service configured
+(node:6892) [MONGOOSE] Warning: Duplicate schema index on {"code":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:6892) [MONGOOSE] Warning: Duplicate schema index on {"studentAddress":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+✅ MongoDB Connected: localhost
+ℹ️ Institutes will be created by admins during registration
+🔑 Backend wallet address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+✅ Blockchain service initialized
+🚀 Server running on port 5000
+📡 API available at http://localhost:5000/api
+💚 Health check at http://localhost:5000/health

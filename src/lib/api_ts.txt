@@ -1,0 +1,1009 @@
+import {
+  User,
+  Credential,
+  Badge,
+  SkillTree,
+  Achievement,
+  StudentAnalytics,
+  FacultyAnalytics,
+  AdminAnalytics,
+  VerificationResult,
+  LeaderboardEntry,
+  Notification,
+  Mentor,
+  ApiResponse,
+  PaginatedResponse,
+} from '@/types';
+import { API_BASE_URL } from './constants';
+
+// API Helper
+async function apiRequest<T>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<ApiResponse<T>> {
+  try {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+    });
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error',
+    };
+  }
+}
+
+// Auth API
+export const authApi = {
+  login: async (email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> => {
+    // Mock implementation - replace with actual API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const mockUser: User = {
+      id: 'user-1',
+      email,
+      role: email.includes('faculty') ? 'faculty' : email.includes('admin') ? 'admin' : 'student',
+      firstName: 'John',
+      lastName: 'Doe',
+      fullName: 'John Doe',
+      walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      createdAt: new Date().toISOString(),
+      isVerified: true,
+    };
+
+    return {
+      success: true,
+      data: {
+        user: mockUser,
+        token: 'mock-jwt-token-' + Date.now(),
+      },
+    };
+  },
+
+  register: async (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    walletAddress?: string;
+  }): Promise<ApiResponse<{ user: User; token: string }>> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const mockUser: User = {
+      id: 'user-' + Date.now(),
+      email: data.email,
+      role: data.role as User['role'],
+      firstName: data.firstName,
+      lastName: data.lastName,
+      fullName: `${data.firstName} ${data.lastName}`,
+      walletAddress: data.walletAddress,
+      createdAt: new Date().toISOString(),
+      isVerified: false,
+    };
+
+    return {
+      success: true,
+      data: {
+        user: mockUser,
+        token: 'mock-jwt-token-' + Date.now(),
+      },
+    };
+  },
+
+  getMe: async (): Promise<ApiResponse<User>> => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    const mockUser: User = {
+      id: 'user-1',
+      email: 'student@example.com',
+      role: 'student',
+      firstName: 'John',
+      lastName: 'Doe',
+      fullName: 'John Doe',
+      walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      createdAt: new Date().toISOString(),
+      isVerified: true,
+      profile: {
+        bio: 'Computer Science student passionate about blockchain technology.',
+        department: 'Computer Science',
+        institution: 'Geethanjali College of Engineering and Technology',
+      },
+    };
+
+    return { success: true, data: mockUser };
+  },
+};
+
+// Credentials API
+export const credentialsApi = {
+  getAll: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<PaginatedResponse<Credential>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Return mock data
+    return {
+      success: true,
+      data: getMockCredentials(),
+      pagination: {
+        page: params?.page || 1,
+        limit: params?.limit || 10,
+        total: 25,
+        pages: 3,
+      },
+    };
+  },
+
+  getById: async (id: string): Promise<ApiResponse<Credential>> => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    const credentials = getMockCredentials();
+    const credential = credentials.find(c => c.id === id || c.credentialId === id);
+    
+    if (!credential) {
+      return { success: false, error: 'Credential not found' };
+    }
+    
+    return { success: true, data: credential };
+  },
+
+  submit: async (data: FormData): Promise<ApiResponse<Credential>> => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const newCredential: Credential = {
+      id: 'cred-' + Date.now(),
+      credentialId: 'CRED-' + Date.now(),
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '',
+      title: data.get('title') as string,
+      description: data.get('description') as string,
+      skills: (data.get('skills') as string)?.split(',').map(s => s.trim()) || [],
+      category: data.get('category') as string,
+      status: 'pending',
+      issuedAt: new Date().toISOString(),
+      endorsementCount: 0,
+    };
+
+    return { success: true, data: newCredential };
+  },
+
+  getPending: async (): Promise<ApiResponse<Credential[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const credentials = getMockCredentials().filter(c => c.status === 'pending');
+    return { success: true, data: credentials };
+  },
+
+  approve: async (id: string): Promise<ApiResponse<Credential>> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      success: true,
+      data: {
+        id,
+        credentialId: 'CRED-' + id,
+        studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+        issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+        title: 'Approved Credential',
+        skills: ['Blockchain', 'Smart Contracts'],
+        category: 'technical',
+        status: 'verified',
+        issuedAt: new Date().toISOString(),
+        endorsementCount: 1,
+        transactionHash: '0x' + Math.random().toString(16).slice(2),
+        blockNumber: Math.floor(Math.random() * 1000000),
+      },
+    };
+  },
+
+  reject: async (id: string, reason: string): Promise<ApiResponse<Credential>> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+      success: true,
+      data: {
+        id,
+        credentialId: 'CRED-' + id,
+        studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+        issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+        title: 'Rejected Credential',
+        skills: [],
+        category: 'technical',
+        status: 'rejected',
+        issuedAt: new Date().toISOString(),
+        endorsementCount: 0,
+        rejectionReason: reason,
+      },
+    };
+  },
+
+  getMyCredentials: async (): Promise<ApiResponse<Credential[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockCredentials() };
+  },
+};
+
+// Badges API
+export const badgesApi = {
+  getByStudent: async (address: string): Promise<ApiResponse<Badge[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockBadges() };
+  },
+
+  mint: async (data: {
+    studentAddress: string;
+    skillName: string;
+    level: number;
+    metadata?: Record<string, unknown>;
+  }): Promise<ApiResponse<Badge>> => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const newBadge: Badge = {
+      id: 'badge-' + Date.now(),
+      tokenId: Math.floor(Math.random() * 10000),
+      skillName: data.skillName,
+      level: data.level,
+      category: 'technical',
+      icon: '🏆',
+      color: '#3B82F6',
+      earnedAt: new Date().toISOString(),
+      issuer: 'System',
+      verified: true,
+      metadata: {
+        rarity: 'rare',
+        xp: 100 * data.level,
+      },
+    };
+
+    return { success: true, data: newBadge };
+  },
+};
+
+// Skill Tree API
+export const skillTreeApi = {
+  getByStudent: async (address: string): Promise<ApiResponse<SkillTree>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockSkillTree() };
+  },
+
+  getTemplates: async (): Promise<ApiResponse<SkillTree[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return { success: true, data: [getMockSkillTree()] };
+  },
+};
+
+// Analytics API
+export const analyticsApi = {
+  getStudent: async (): Promise<ApiResponse<StudentAnalytics>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockStudentAnalytics() };
+  },
+
+  getFaculty: async (): Promise<ApiResponse<FacultyAnalytics>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockFacultyAnalytics() };
+  },
+
+  getAdmin: async (): Promise<ApiResponse<AdminAnalytics>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockAdminAnalytics() };
+  },
+};
+
+// Verification API
+export const verificationApi = {
+  verifyCredential: async (credentialId: string): Promise<ApiResponse<VerificationResult>> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const result: VerificationResult = {
+      verified: true,
+      credential: {
+        id: credentialId,
+        courseName: 'Blockchain Development Fundamentals',
+        skillsVerified: ['Solidity', 'Smart Contracts', 'Web3.js'],
+        grade: 'A',
+        description: 'Comprehensive course on blockchain development',
+        issueDate: '2024-06-15T00:00:00.000Z',
+      },
+      student: {
+        name: 'John Doe',
+        walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      },
+      issuer: {
+        name: 'Dr. Jane Smith',
+        institution: 'Geethanjali College of Engineering and Technology',
+      },
+      status: {
+        isValid: true,
+        isRevoked: false,
+        currentStatus: 'Valid',
+        statusColor: 'green',
+      },
+      blockchain: {
+        transactionHash: '0x' + Math.random().toString(16).slice(2, 66),
+        blockNumber: Math.floor(Math.random() * 1000000),
+        timestamp: new Date().toISOString(),
+      },
+      verificationUrl: `https://blockcert.app/verify/${credentialId}`,
+      verifiedAt: new Date().toISOString(),
+    };
+
+    return { success: true, data: result };
+  },
+
+  verifyByQR: async (qrData: string): Promise<ApiResponse<VerificationResult>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    // Parse QR data and verify
+    return verificationApi.verifyCredential('mock-credential-id');
+  },
+};
+
+// Leaderboard API
+export const leaderboardApi = {
+  getAll: async (limit = 10): Promise<ApiResponse<LeaderboardEntry[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockLeaderboard(limit) };
+  },
+};
+
+// Notifications API
+export const notificationsApi = {
+  getAll: async (): Promise<ApiResponse<Notification[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return { success: true, data: getMockNotifications() };
+  },
+
+  markAsRead: async (id: string): Promise<ApiResponse<Notification>> => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: getMockNotifications()[0] };
+  },
+
+  markAllAsRead: async (): Promise<ApiResponse<{ count: number }>> => {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return { success: true, data: { count: 5 } };
+  },
+};
+
+// Mentors API
+export const mentorsApi = {
+  getAll: async (): Promise<ApiResponse<Mentor[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return { success: true, data: getMockMentors() };
+  },
+};
+
+// Achievements API
+export const achievementsApi = {
+  getAll: async (): Promise<ApiResponse<Achievement[]>> => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return { success: true, data: getMockAchievements() };
+  },
+};
+
+// Mock Data Functions
+function getMockCredentials(): Credential[] {
+  return [
+    {
+      id: 'cred-1',
+      credentialId: 'CRED-001',
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      title: 'Blockchain Development Fundamentals',
+      description: 'Complete course on blockchain development using Ethereum and Solidity',
+      skills: ['Solidity', 'Smart Contracts', 'Web3.js', 'Truffle'],
+      category: 'technical',
+      status: 'verified',
+      issuedAt: '2024-06-15T00:00:00.000Z',
+      endorsementCount: 3,
+      transactionHash: '0x123abc456def789',
+      blockNumber: 1234567,
+      ipfsHash: 'QmXyz123abc',
+    },
+    {
+      id: 'cred-2',
+      credentialId: 'CRED-002',
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      title: 'React.js Advanced Patterns',
+      description: 'Advanced React patterns including hooks, context, and performance optimization',
+      skills: ['React', 'JavaScript', 'TypeScript', 'Redux'],
+      category: 'technical',
+      status: 'verified',
+      issuedAt: '2024-05-20T00:00:00.000Z',
+      endorsementCount: 2,
+      transactionHash: '0x456def789abc123',
+      blockNumber: 1234568,
+    },
+    {
+      id: 'cred-3',
+      credentialId: 'CRED-003',
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      title: 'Python Machine Learning',
+      description: 'Introduction to machine learning with Python and scikit-learn',
+      skills: ['Python', 'Machine Learning', 'NumPy', 'Pandas'],
+      category: 'technical',
+      status: 'pending',
+      issuedAt: '2024-07-01T00:00:00.000Z',
+      endorsementCount: 0,
+    },
+    {
+      id: 'cred-4',
+      credentialId: 'CRED-004',
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      title: 'AWS Cloud Practitioner',
+      description: 'AWS cloud fundamentals certification',
+      skills: ['AWS', 'Cloud Computing', 'DevOps'],
+      category: 'certification',
+      status: 'verified',
+      issuedAt: '2024-04-10T00:00:00.000Z',
+      endorsementCount: 1,
+      transactionHash: '0x789abc123def456',
+      blockNumber: 1234569,
+      badgeTokenId: 101,
+    },
+    {
+      id: 'cred-5',
+      credentialId: 'CRED-005',
+      studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+      issuerAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+      title: 'Project Management Internship',
+      description: 'Summer internship at Tech Corp',
+      skills: ['Project Management', 'Agile', 'Scrum', 'Communication'],
+      category: 'domain',
+      status: 'rejected',
+      issuedAt: '2024-03-15T00:00:00.000Z',
+      endorsementCount: 0,
+      rejectionReason: 'Insufficient evidence provided',
+    },
+  ];
+}
+
+function getMockBadges(): Badge[] {
+  return [
+    {
+      id: 'badge-1',
+      tokenId: 101,
+      skillName: 'Blockchain Development',
+      level: 3,
+      category: 'technical',
+      description: 'Expert in blockchain development',
+      icon: '⛓️',
+      color: '#3B82F6',
+      earnedAt: '2024-06-15T00:00:00.000Z',
+      issuer: 'Dr. Jane Smith',
+      verified: true,
+      metadata: { rarity: 'rare', xp: 300 },
+    },
+    {
+      id: 'badge-2',
+      tokenId: 102,
+      skillName: 'React Development',
+      level: 2,
+      category: 'technical',
+      description: 'Advanced React developer',
+      icon: '⚛️',
+      color: '#61DAFB',
+      earnedAt: '2024-05-20T00:00:00.000Z',
+      issuer: 'Prof. John Doe',
+      verified: true,
+      metadata: { rarity: 'uncommon', xp: 200 },
+    },
+    {
+      id: 'badge-3',
+      tokenId: 103,
+      skillName: 'Cloud Computing',
+      level: 2,
+      category: 'certification',
+      description: 'AWS certified practitioner',
+      icon: '☁️',
+      color: '#FF9900',
+      earnedAt: '2024-04-10T00:00:00.000Z',
+      issuer: 'AWS',
+      verified: true,
+      metadata: { rarity: 'uncommon', xp: 200 },
+    },
+    {
+      id: 'badge-4',
+      tokenId: 104,
+      skillName: 'Leadership',
+      level: 1,
+      category: 'soft',
+      description: 'Team leadership skills',
+      icon: '👑',
+      color: '#FFD700',
+      earnedAt: '2024-03-01T00:00:00.000Z',
+      issuer: 'Tech Corp',
+      verified: true,
+      metadata: { rarity: 'common', xp: 100 },
+    },
+    {
+      id: 'badge-5',
+      tokenId: 105,
+      skillName: 'Machine Learning',
+      level: 1,
+      category: 'technical',
+      description: 'ML fundamentals',
+      icon: '🤖',
+      color: '#10B981',
+      earnedAt: '2024-02-15T00:00:00.000Z',
+      issuer: 'Dr. Smith',
+      verified: true,
+      metadata: { rarity: 'common', xp: 100 },
+    },
+  ];
+}
+
+function getMockSkillTree(): SkillTree {
+  return {
+    id: 'tree-1',
+    studentAddress: '0x1234567890abcdef1234567890abcdef12345678',
+    name: 'My Skill Tree',
+    nodes: [
+      {
+        id: 'skill-1',
+        name: 'HTML',
+        category: 'technical',
+        level: 1,
+        description: 'HTML fundamentals',
+        xpPoints: 100,
+        isLocked: false,
+        prerequisites: [],
+        credentials: ['cred-1'],
+        icon: '🌐',
+        position: { x: 0, y: 0 },
+        unlockedAt: '2024-01-15T00:00:00.000Z',
+      },
+      {
+        id: 'skill-2',
+        name: 'CSS',
+        category: 'technical',
+        level: 1,
+        description: 'CSS styling',
+        xpPoints: 100,
+        isLocked: false,
+        prerequisites: ['skill-1'],
+        credentials: ['cred-1'],
+        icon: '🎨',
+        position: { x: 100, y: 50 },
+        unlockedAt: '2024-01-20T00:00:00.000Z',
+      },
+      {
+        id: 'skill-3',
+        name: 'JavaScript',
+        category: 'technical',
+        level: 2,
+        description: 'JavaScript programming',
+        xpPoints: 200,
+        isLocked: false,
+        prerequisites: ['skill-1', 'skill-2'],
+        credentials: ['cred-2'],
+        icon: '⚡',
+        position: { x: 200, y: 100 },
+        unlockedAt: '2024-02-10T00:00:00.000Z',
+      },
+      {
+        id: 'skill-4',
+        name: 'React',
+        category: 'technical',
+        level: 3,
+        description: 'React framework',
+        xpPoints: 300,
+        isLocked: false,
+        prerequisites: ['skill-3'],
+        credentials: ['cred-2'],
+        icon: '⚛️',
+        position: { x: 300, y: 150 },
+        unlockedAt: '2024-05-20T00:00:00.000Z',
+      },
+      {
+        id: 'skill-5',
+        name: 'Solidity',
+        category: 'technical',
+        level: 2,
+        description: 'Smart contract development',
+        xpPoints: 250,
+        isLocked: false,
+        prerequisites: ['skill-3'],
+        credentials: ['cred-1'],
+        icon: '⛓️',
+        position: { x: 100, y: 200 },
+        unlockedAt: '2024-06-15T00:00:00.000Z',
+      },
+      {
+        id: 'skill-6',
+        name: 'Web3.js',
+        category: 'technical',
+        level: 3,
+        description: 'Web3 integration',
+        xpPoints: 300,
+        isLocked: true,
+        prerequisites: ['skill-5'],
+        credentials: [],
+        icon: '🌐',
+        position: { x: 150, y: 300 },
+      },
+      {
+        id: 'skill-7',
+        name: 'Node.js',
+        category: 'technical',
+        level: 3,
+        description: 'Backend with Node',
+        xpPoints: 300,
+        isLocked: true,
+        prerequisites: ['skill-3'],
+        credentials: [],
+        icon: '🟢',
+        position: { x: 350, y: 200 },
+      },
+    ],
+    totalXP: 1050,
+    level: 5,
+    completedNodes: 5,
+    totalNodes: 7,
+    branches: [
+      { name: 'Frontend', category: 'technical', progress: 80 },
+      { name: 'Blockchain', category: 'technical', progress: 50 },
+      { name: 'Backend', category: 'technical', progress: 30 },
+    ],
+  };
+}
+
+function getMockStudentAnalytics(): StudentAnalytics {
+  return {
+    overview: {
+      totalCredentials: 5,
+      validatedCredentials: 3,
+      pendingValidation: 1,
+      revokedCredentials: 0,
+      totalBadges: 4,
+      uniqueSkills: 12,
+    },
+    skills: {
+      topSkills: [
+        { skill: 'JavaScript', count: 3, level: 'Advanced' },
+        { skill: 'React', count: 2, level: 'Intermediate' },
+        { skill: 'Solidity', count: 2, level: 'Intermediate' },
+        { skill: 'Python', count: 1, level: 'Beginner' },
+      ],
+      categories: {
+        technical: ['JavaScript', 'React', 'Solidity', 'Python'],
+        certification: ['AWS'],
+        soft: ['Leadership', 'Communication'],
+      },
+      distribution: {
+        technical: 8,
+        certification: 2,
+        soft: 2,
+      },
+    },
+    milestones: getMockAchievements(),
+    nextMilestone: {
+      id: 'five-credentials',
+      name: 'Getting Started',
+      description: 'Get 5 credentials verified',
+      icon: '📚',
+      category: 'credential',
+      requirement: 5,
+      progress: 3,
+      achieved: false,
+    },
+    recentActivity: [
+      {
+        id: 'act-1',
+        type: 'credential',
+        action: 'Credential Verified',
+        title: 'Blockchain Development Fundamentals',
+        date: '2024-06-15T00:00:00.000Z',
+        status: 'verified',
+      },
+      {
+        id: 'act-2',
+        type: 'badge',
+        action: 'Badge Earned',
+        title: 'Blockchain Development Badge',
+        date: '2024-06-15T00:00:00.000Z',
+      },
+      {
+        id: 'act-3',
+        type: 'credential',
+        action: 'Credential Submitted',
+        title: 'Python Machine Learning',
+        date: '2024-07-01T00:00:00.000Z',
+        status: 'pending',
+      },
+    ],
+    recommendations: [
+      {
+        type: 'upgrade',
+        title: 'Advance your JavaScript skills',
+        reason: 'You have intermediate proficiency',
+      },
+      {
+        type: 'explore',
+        title: 'Explore new skill domains',
+        reason: 'Diversify your skill portfolio',
+      },
+    ],
+    performanceScore: 72,
+  };
+}
+
+function getMockFacultyAnalytics(): FacultyAnalytics {
+  return {
+    overview: {
+      totalValidations: 25,
+      approved: 22,
+      revoked: 1,
+      avgValidationTime: '2.5',
+      studentsSupervised: 15,
+    },
+    students: [
+      { address: '0x1234...5678', name: 'John Doe' },
+      { address: '0xabcd...ef12', name: 'Jane Smith' },
+      { address: '0x9876...5432', name: 'Bob Johnson' },
+    ],
+    skillDistribution: [
+      { skill: 'Blockchain', count: 8 },
+      { skill: 'React', count: 6 },
+      { skill: 'Python', count: 5 },
+      { skill: 'AWS', count: 4 },
+    ],
+    monthlyTrends: [
+      { month: '2024-01', issued: 3, revoked: 0 },
+      { month: '2024-02', issued: 5, revoked: 0 },
+      { month: '2024-03', issued: 4, revoked: 1 },
+      { month: '2024-04', issued: 6, revoked: 0 },
+      { month: '2024-05', issued: 4, revoked: 0 },
+      { month: '2024-06', issued: 3, revoked: 0 },
+    ],
+    performanceMetrics: {
+      approvalRate: '88',
+      revocationRate: '4',
+    },
+  };
+}
+
+function getMockAdminAnalytics(): AdminAnalytics {
+  return {
+    overview: {
+      totalUsers: 156,
+      totalStudents: 120,
+      totalFaculty: 25,
+      totalEmployers: 11,
+      totalCredentials: 345,
+      validCredentials: 312,
+      revokedCredentials: 8,
+      validationRate: '90.4',
+      totalBadges: 89,
+    },
+    topSkills: [
+      { skill: 'JavaScript', count: 45 },
+      { skill: 'React', count: 38 },
+      { skill: 'Python', count: 32 },
+      { skill: 'Blockchain', count: 28 },
+      { skill: 'AWS', count: 25 },
+    ],
+    topStudents: [
+      { address: '0x1234...5678', credentialCount: 12 },
+      { address: '0xabcd...ef12', credentialCount: 10 },
+      { address: '0x9876...5432', credentialCount: 9 },
+    ],
+    growth: {
+      users: [
+        { month: '2024-01', count: 100 },
+        { month: '2024-02', count: 115 },
+        { month: '2024-03', count: 125 },
+        { month: '2024-04', count: 132 },
+        { month: '2024-05', count: 145 },
+        { month: '2024-06', count: 156 },
+      ],
+      credentials: [
+        { month: '2024-01', count: 200 },
+        { month: '2024-02', count: 235 },
+        { month: '2024-03', count: 265 },
+        { month: '2024-04', count: 290 },
+        { month: '2024-05', count: 318 },
+        { month: '2024-06', count: 345 },
+      ],
+    },
+    recentActivity: [
+      {
+        id: 'act-1',
+        type: 'credential',
+        action: 'issued',
+        title: 'New credential issued',
+        date: new Date().toISOString(),
+      },
+      {
+        id: 'act-2',
+        type: 'verification',
+        action: 'verified',
+        title: 'Credential verified by employer',
+        date: new Date().toISOString(),
+      },
+    ],
+    systemHealth: {
+      uptime: 99.9,
+      memoryUsage: process.memoryUsage(),
+    },
+  };
+}
+
+function getMockLeaderboard(limit: number): LeaderboardEntry[] {
+  const entries: LeaderboardEntry[] = [
+    { rank: 1, studentAddress: '0x1234...5678', studentName: 'Alice Johnson', totalScore: 850, totalCredentials: 12, totalBadges: 8, tier: 'platinum', change: 0 },
+    { rank: 2, studentAddress: '0xabcd...ef12', studentName: 'Bob Smith', totalScore: 720, totalCredentials: 10, totalBadges: 6, tier: 'gold', change: 1 },
+    { rank: 3, studentAddress: '0x9876...5432', studentName: 'Charlie Brown', totalScore: 680, totalCredentials: 9, totalBadges: 5, tier: 'gold', change: -1 },
+    { rank: 4, studentAddress: '0xdef0...1234', studentName: 'Diana Ross', totalScore: 620, totalCredentials: 8, totalBadges: 5, tier: 'gold', change: 2 },
+    { rank: 5, studentAddress: '0x4567...8901', studentName: 'Eve Wilson', totalScore: 550, totalCredentials: 7, totalBadges: 4, tier: 'silver', change: 0 },
+    { rank: 6, studentAddress: '0xcdef...4567', studentName: 'Frank Miller', totalScore: 490, totalCredentials: 6, totalBadges: 3, tier: 'silver', change: 1 },
+    { rank: 7, studentAddress: '0x8901...2345', studentName: 'Grace Lee', totalScore: 420, totalCredentials: 5, totalBadges: 3, tier: 'silver', change: -2 },
+    { rank: 8, studentAddress: '0x2345...6789', studentName: 'Henry Davis', totalScore: 380, totalCredentials: 4, totalBadges: 2, tier: 'bronze', change: 0 },
+    { rank: 9, studentAddress: '0x5678...9012', studentName: 'Ivy Chen', totalScore: 320, totalCredentials: 3, totalBadges: 2, tier: 'bronze', change: 1 },
+    { rank: 10, studentAddress: '0x9012...3456', studentName: 'Jack Taylor', totalScore: 280, totalCredentials: 3, totalBadges: 1, tier: 'bronze', change: -1 },
+  ];
+  
+  return entries.slice(0, limit);
+}
+
+function getMockNotifications(): Notification[] {
+  return [
+    {
+      id: 'notif-1',
+      type: 'credential_approved',
+      title: 'Credential Approved',
+      message: 'Your credential "Blockchain Development Fundamentals" has been approved.',
+      read: false,
+      createdAt: new Date().toISOString(),
+      actionUrl: '/credentials/cred-1',
+    },
+    {
+      id: 'notif-2',
+      type: 'badge_earned',
+      title: 'Badge Earned',
+      message: 'Congratulations! You earned the "Blockchain Developer" badge.',
+      read: false,
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      actionUrl: '/badges',
+    },
+    {
+      id: 'notif-3',
+      type: 'milestone_achieved',
+      title: 'Milestone Achieved',
+      message: 'You reached the "Getting Started" milestone with 5 credentials!',
+      read: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      id: 'notif-4',
+      type: 'verification_request',
+      title: 'Verification Request',
+      message: 'An employer has verified your credential.',
+      read: true,
+      createdAt: new Date(Date.now() - 172800000).toISOString(),
+    },
+    {
+      id: 'notif-5',
+      type: 'system',
+      title: 'System Update',
+      message: 'New features have been added to the platform.',
+      read: true,
+      createdAt: new Date(Date.now() - 259200000).toISOString(),
+    },
+  ];
+}
+
+function getMockMentors(): Mentor[] {
+  return [
+    {
+      id: 'mentor-1',
+      name: 'Dr. Sarah Johnson',
+      title: 'Senior Blockchain Developer',
+      company: 'Ethereum Foundation',
+      skills: ['Blockchain', 'Solidity', 'Smart Contracts', 'Web3'],
+      rating: 4.9,
+      sessions: 45,
+      bio: 'Experienced blockchain developer with 8+ years in the industry.',
+      available: true,
+    },
+    {
+      id: 'mentor-2',
+      name: 'Michael Chen',
+      title: 'Full Stack Engineer',
+      company: 'Google',
+      skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
+      rating: 4.8,
+      sessions: 32,
+      bio: 'Full stack engineer passionate about teaching modern web development.',
+      available: true,
+    },
+    {
+      id: 'mentor-3',
+      name: 'Emily Rodriguez',
+      title: 'Machine Learning Engineer',
+      company: 'OpenAI',
+      skills: ['Python', 'Machine Learning', 'Deep Learning', 'NLP'],
+      rating: 4.7,
+      sessions: 28,
+      bio: 'ML engineer working on cutting-edge AI technologies.',
+      available: false,
+    },
+  ];
+}
+
+function getMockAchievements(): Achievement[] {
+  return [
+    {
+      id: 'first-credential',
+      name: 'First Step',
+      description: 'Get your first credential verified',
+      icon: '🎯',
+      category: 'credential',
+      requirement: 1,
+      progress: 1,
+      achieved: true,
+      achievedAt: '2024-01-15T00:00:00.000Z',
+      reward: { xp: 50 },
+    },
+    {
+      id: 'five-credentials',
+      name: 'Getting Started',
+      description: 'Get 5 credentials verified',
+      icon: '📚',
+      category: 'credential',
+      requirement: 5,
+      progress: 3,
+      achieved: false,
+      reward: { xp: 100 },
+    },
+    {
+      id: 'first-badge',
+      name: 'Badge Collector',
+      description: 'Earn your first NFT badge',
+      icon: '🏅',
+      category: 'badge',
+      requirement: 1,
+      progress: 1,
+      achieved: true,
+      achievedAt: '2024-02-10T00:00:00.000Z',
+      reward: { xp: 100 },
+    },
+    {
+      id: 'five-badges',
+      name: 'Badge Enthusiast',
+      description: 'Earn 5 NFT badges',
+      icon: '💎',
+      category: 'badge',
+      requirement: 5,
+      progress: 4,
+      achieved: false,
+      reward: { xp: 300 },
+    },
+    {
+      id: 'ten-skills',
+      name: 'Skill Builder',
+      description: 'Add 10 skills to your profile',
+      icon: '🛠️',
+      category: 'skill',
+      requirement: 10,
+      progress: 12,
+      achieved: true,
+      achievedAt: '2024-05-01T00:00:00.000Z',
+      reward: { xp: 150 },
+    },
+  ];
+}
